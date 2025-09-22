@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Gastos</title>
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 20px;
+  background-color: #f4f4f4;
+}
+
+h1 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+label {
+  font-weight: bold;
+}
+
+input, select, textarea, button {
+  display: block;
+  width: 100%;
+  margin-bottom: 15px;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+button {
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+}
+
+#guardar {
+  background-color: #4CAF50;
+}
+
+#guardar:hover {
+  background-color: #45a049;
+}
+
+#exportar {
+  background-color: #2196F3;
+}
+
+#exportar:hover {
+  background-color: #1976D2;
+}
+</style>
+</head>
+<body>
+<h1>Registro de Gastos / Ingresos</h1>
+
+<label>Fecha:</label>
+<input type="date" id="fecha">
+
+<label>Tipo:</label>
+<select id="tipo">
+  <option value="Ingreso">Ingreso</option>
+  <option value="Egreso">Egreso</option>
+</select>
+
+<label>Importe:</label>
+<input type="number" id="importe" placeholder="0.00">
+
+<label>Categoría:</label>
+<select id="categoria">
+  <option>Transporte</option>
+  <option>Comida</option>
+  <option>Alquiler</option>
+  <option>Servicios</option>
+  <option>Ocio</option>
+  <option>Otros</option>
+</select>
+
+<label>Descripción (opcional):</label>
+<textarea id="descripcion" placeholder="Comentario breve"></textarea>
+
+<button id="guardar">Guardar registro</button>
+<button id="exportar">Exportar CSV</button>
+
+<script>
+let registros = JSON.parse(localStorage.getItem("registros")) || [];
+
+// Fecha de hoy por defecto
+document.getElementById("fecha").valueAsDate = new Date();
+// Tipo "Egreso" por defecto
+document.getElementById("tipo").value = "Egreso";
+
+document.getElementById("guardar").addEventListener("click", () => {
+  const fecha = document.getElementById("fecha").value;
+  const tipo = document.getElementById("tipo").value;
+  const importe = document.getElementById("importe").value;
+  const categoria = document.getElementById("categoria").value;
+  const descripcion = document.getElementById("descripcion").value;
+
+  if (!fecha || !importe) {
+    alert("Fecha e Importe son obligatorios.");
+    return;
+  }
+
+  const registro = {fecha, tipo, importe, categoria, descripcion, exportado: false};
+  registros.push(registro);
+  localStorage.setItem("registros", JSON.stringify(registros));
+
+  // Limpiar campos para nuevo registro
+  document.getElementById("importe").value = "";
+  document.getElementById("descripcion").value = "";
+  alert("Registro guardado!");
+});
+
+document.getElementById("exportar").addEventListener("click", () => {
+  const pendientes = registros.filter(r => !r.exportado);
+  if (pendientes.length === 0) {
+    alert("No hay registros nuevos para exportar.");
+    return;
+  }
+
+  let csvContent = "Fecha,Tipo,Importe,Categoría,Descripción\n";
+  pendientes.forEach(r => {
+    csvContent += `${r.fecha},${r.tipo},${r.importe},${r.categoria},${r.descripcion}\n`;
+    r.exportado = true;
+  });
+
+  localStorage.setItem("registros", JSON.stringify(registros));
+
+  const blob = new Blob([csvContent], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `export_${new Date().toISOString().slice(0,16).replace("T","_")}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+});
+</script>
+
+</body>
+</html>
